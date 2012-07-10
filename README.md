@@ -1,11 +1,11 @@
-= HasFilter
+# HasFilter
 
 Active Record filter conditions
 
 It's allows you to find a model with a specific set of conditions, eliminating complex set of filter conditions in filter forms.
 
 
-== Getting started
+## Getting started
 
 Install - Gemfile
 

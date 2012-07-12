@@ -53,13 +53,13 @@ class HasFilterTest < ActiveSupport::TestCase
 
   test "filter basic object" do
     article = Article.create(:title => "Foo", :content => "Bar", :active => true, :category_id => 1)
-    founds  = Article.filtering(:active => true)
+    founds  = Article.filter(:active => true)
     assert_equal article, founds.last
   end
 
   test "filter with two conditions" do
     article = Article.create(:title => "Foo", :content => "Baz", :active => true, :category_id => 1)
-    founds  = Article.filtering(:active => true, :content => "Baz")
+    founds  = Article.filter(:active => true, :content => "Baz")
     assert_equal article, founds.last
     assert_equal "Baz", founds.last.content
   end
@@ -68,7 +68,7 @@ class HasFilterTest < ActiveSupport::TestCase
     Article.create(:title => "Active", :active => true)
     Article.create(:title => "Active")
 
-    articles = Article.filtering(:title => "Active", :active => true)
+    articles = Article.filter(:title => "Active", :active => true)
     assert_equal 1, articles.size
     assert_equal "Active", articles.first.title
   end
@@ -78,7 +78,7 @@ class HasFilterTest < ActiveSupport::TestCase
     Article.create(:title => "Active", :active => true)
     Article.create(:title => "Active")
 
-    articles = Article.filtering(:title => nil, :active => nil)
+    articles = Article.filter(:title => nil, :active => nil)
     assert_equal 2, articles.size
     assert_equal "Active", articles.first.title
   end
@@ -87,34 +87,34 @@ class HasFilterTest < ActiveSupport::TestCase
     Post.create(:active => false, :title => "Post 1")
     Post.create(:active => true, :title => "Post 2")
 
-    posts = Post.filtering(:active => true)
+    posts = Post.filter(:active => true)
     assert_equal 0, posts.size
 
-    posts = Post.filtering(:title => "Post", :active => true)
+    posts = Post.filter(:title => "Post", :active => true)
     assert_equal 2, posts.size
     assert_equal "Post 1", posts.first.title
   end
 
   test "when string filter with like" do
-    Post.create(:title => "Filtering")
-    Post.create(:title => "Filtering option")
+    Post.create(:title => "filter")
+    Post.create(:title => "filter option")
     Post.create(:title => "Filber")
 
-    posts = Post.filtering(:title => "Filter")
+    posts = Post.filter(:title => "Filter")
     assert_equal 2, posts.size
-    assert_equal ["Filtering", "Filtering option"], posts.map(&:title)
+    assert_equal ["filter", "filter option"], posts.map(&:title)
   end
 
   test "with array option" do
     Article.delete_all
-    Article.create(:title => "Filtering", :active => true)
+    Article.create(:title => "filter", :active => true)
     Article.create(:title => "Test", :active => true)
     Article.create(:title => "Coding", :active => false)
 
-    articles = Article.filtering(:title => "ing", :active => [true, false])
-    assert_equal 2, articles.size
+    articles = Article.filter(:title => "ing", :active => [true, false])
+    assert_equal 1, articles.size
 
-    articles = Article.filtering(:active => [true, false])
+    articles = Article.filter(:active => [true, false])
     assert_equal 3, articles.size
   end
 
@@ -148,8 +148,27 @@ class HasFilterTest < ActiveSupport::TestCase
                            :status            => "inactive",
                            :discipline_id     => 1 }
 
-    results = Activity.filtering(multiple_conditions)
+    results = Activity.filter(multiple_conditions)
     assert_equal 2, results.size
     assert_equal results, activities
+  end
+
+  test "ignore unrecognized attributes" do
+    article = Article.create(:title => "Foo", :content => "Bar", :active => true, :category_id => 1)
+    founds  = Article.filter(:active => true, :el_kabong => true)
+    assert_equal article, founds.last
+  end
+
+  test "no conditions no results" do
+    article = Article.create(:title => "Foo", :content => "Bar", :active => true, :category_id => 1)
+    founds = Article.filter
+    assert_equal 0, founds.size
+  end
+
+  test "empty array values" do
+    Article.delete_all
+    article = Article.create(:title => "Foo", :content => "Bar", :active => true, :category_id => 1)
+    founds = Article.filter(:content => ["Bar", ""])
+    assert_equal 1, founds.size
   end
 end

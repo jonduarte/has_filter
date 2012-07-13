@@ -1,0 +1,30 @@
+<%= form_tag search_articles_path do %>
+  <p>
+    <%= label_tag :title %>
+    <%= text_field_tag :title%>
+  <p>
+
+  <p>
+    <%= label_tag :content %>
+    <%= text_field_tag :content%>
+  <p>
+
+  <p>
+    <label>Active   <%= check_box_tag "active[]", "1"  %></label>
+    <label>Inactive <%= check_box_tag "active[]", "0"  %></label>
+  <p>
+
+  <p>
+    <%= label_tag :category_id %>
+    <%= text_field_tag :category_id %>
+  <p>
+
+  <%= submit_tag 'send' %>
+
+<% end %>
+Count: <%= @articles.count %>
+<ul>
+  <% @articles.each do |article| %>
+      <li><%= article.title %> - <%= article.content %></li>
+  <% end %>
+</ul>

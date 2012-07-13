@@ -1,5 +1,3 @@
-require 'active_record'
-
 module HasFilter
   def self.included(base)
     base.extend ClassMethods
@@ -10,24 +8,22 @@ module HasFilter
       @_filters = *allowed_fields
     end
 
-    def filter(filtering = nil)
-      return [] unless filtering
+    def filter(filtering = nil, limit = 100)
       conditions = filtering
-      filters = []
-
-      conditions = _normalize_conditions(conditions)
-
-      if conditions.empty?
-        filters << _hash_conditions(:id)
-      else
-        filters << _set_filters(conditions)
+      if @_filters.present?
+        conditions = _valid_filters(conditions)
+        return [] if conditions.empty?
       end
 
-      find(:all, :conditions => filters.flatten)
+      conditions = _normalize_conditions(conditions)
+      all(:conditions => _set_filters(conditions).flatten, :limit => limit)
     end
 
     private
 
+    def _valid_filters(conditions)
+      conditions.select { |k, v| @_filters.include? k }
+    end
 
     def _set_filters(conditions)
       filters = []
@@ -74,9 +70,8 @@ module HasFilter
 
     def _normalize_conditions(filtering)
       conditions = filtering
-      conditions = conditions.select { |k, v| self.column_names.include? k.to_s }
-      conditions = conditions.select { |k, v| @_filters.include? k              } if @_filters.present?
-      conditions = conditions.reject { |k, v| v && v.blank? || v.nil?           }
+      conditions = conditions.select{ |k, v| self.column_names.include? k.to_s }
+      conditions = conditions.reject{ |k, v| v && v.blank? || v.nil?           }
 
       conditions.inject({})  do |hash, (key, value)|
         key = key.to_sym

@@ -1,47 +1,5 @@
 require 'test_helper'
 
-ActiveRecord::Base.establish_connection(:adapter => 'sqlite3', :database => ':memory:')
-ActiveRecord::Migration.verbose = false
-ActiveRecord::Schema.define do
-  create_table :articles do |t|
-    t.string  :title
-    t.text    :content
-    t.boolean :active, :default => false
-    t.integer :category_id
-  end
-
-  create_table :activities do |t|
-    t.integer :category_id
-    t.integer :school_grade_id
-    t.integer :discipline_id
-    t.integer :custom_theme_id
-    t.integer :custom_subject_id
-    t.string  :objective
-    t.string  :pcn
-    t.string  :name
-    t.string  :status
-  end
-
-  create_table :posts do |t|
-    t.string  :title
-    t.text    :content
-    t.boolean :active, :default => false
-    t.integer :category_id
-  end
-end
-
-class Article < ActiveRecord::Base
-  has_filter
-end
-
-class Post < ActiveRecord::Base
-  has_filter :title
-end
-
-class Activity < ActiveRecord::Base
-  has_filter
-end
-
 class HasFilterTest < ActiveSupport::TestCase
   test "create an article instance" do
     article = Article.create(:title => "Foo", :content => "Bar", :active => true, :category_id => 1)
@@ -80,7 +38,7 @@ class HasFilterTest < ActiveSupport::TestCase
     Article.create(:title => "Active")
 
     articles = Article.filter(:title => nil, :active => nil)
-    assert_equal 0, articles.size
+    assert_equal 2, articles.size
   end
 
   test "filter allowed fields" do
@@ -118,51 +76,10 @@ class HasFilterTest < ActiveSupport::TestCase
     assert_equal 3, articles.size
   end
 
-  test "multiple array conditions" do
-    activities = []
-    2.times do
-      activities << Activity.create(:school_grade_id   => 1,
-                      :discipline_id     => 1,
-                      :custom_theme_id   => 1,
-                      :custom_subject_id => 1,
-                      :objective         => "some objetive",
-                      :pcn               => "some pcn",
-                      :name              => nil,
-                      :status            => "inactive")
-    end
-
-    Activity.create(:school_grade_id   => 3,
-                    :discipline_id     => 1,
-                    :custom_theme_id   => 1,
-                    :custom_subject_id => 1,
-                    :objective         => "some objetive",
-                    :pcn               => "some pcn",
-                    :name              => nil,
-                    :status            => "inactive")
-
-    multiple_conditions = {:custom_theme_id   => 1,
-                           :pcn               => "some pcn",
-                           :school_grade_id   => 1,
-                           :objective         => "some objetive",
-                           :custom_subject_id => 1,
-                           :status            => "inactive",
-                           :discipline_id     => 1 }
-
-    results = Activity.filter(multiple_conditions)
-    assert_equal 2, results.size
-    assert_equal results, activities
-  end
-
   test "ignore unrecognized attributes" do
     article = Article.create(:title => "Foo", :content => "Bar", :active => true, :category_id => 1)
     founds  = Article.filter(:active => true, :el_kabong => true)
     assert_equal article, founds.last
-  end
-
-  test "no conditions no results" do
-    article = Article.create(:title => "Foo", :content => "Bar", :active => true, :category_id => 1)
-    founds = Article.filter
-    assert_equal 0, founds.size
   end
 
   test "empty values" do
@@ -178,6 +95,16 @@ class HasFilterTest < ActiveSupport::TestCase
     assert_equal 0, founds.size
 
     founds = Article.filter("title" => "", "content" => "", "active" => "true", :category_id => "")
+    assert_equal 1, founds.size
+  end
+
+  test "with limit" do
+    Article.delete_all
+    Article.create(:title => "Foo", :content => "Bar", :active => true, :category_id => 1)
+    Article.create(:title => "Foo", :content => "Bar", :active => true, :category_id => 1)
+    Article.create(:title => "Foo", :content => "Bar", :active => true, :category_id => 1)
+
+    founds = Article.filter({"title" => "Foo"}, 1)
     assert_equal 1, founds.size
   end
 end

@@ -74,9 +74,9 @@ module HasFilter
 
     def _normalize_conditions(filtering)
       conditions = filtering
-      conditions.select! { |k, v| self.column_names.include? k.to_s }
-      conditions.select! { |k, v| @_filters.include? k              } if @_filters.present?
-      conditions.reject! { |k, v| v && v.blank? || v.nil?           }
+      conditions = conditions.select { |k, v| self.column_names.include? k.to_s }
+      conditions = conditions.select { |k, v| @_filters.include? k              } if @_filters.present?
+      conditions = conditions.reject { |k, v| v && v.blank? || v.nil?           }
 
       conditions.inject({})  do |hash, (key, value)|
         key = key.to_sym

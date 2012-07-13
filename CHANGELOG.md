@@ -1,3 +1,8 @@
+## 0.1.2
+  * Add limit option for filtering, default = 100.
+  * Fix empty filtering again - Only return nothing when filtering
+    options is empty and filter fields is allowed
+
 ## 0.1.1
   * Fix nil filtering
   * Fix boolean filtering

@@ -1,32 +1,16 @@
 require 'test_helper'
 
-class Article < ActiveRecord::Base
-  establish_connection :adapter => 'sqlite3', :database => ':memory:'
-  connection.create_table table_name do |t|
+ActiveRecord::Base.establish_connection(:adapter => 'sqlite3', :database => ':memory:')
+ActiveRecord::Migration.verbose = false
+ActiveRecord::Schema.define do
+  create_table :articles do |t|
     t.string  :title
     t.text    :content
     t.boolean :active, :default => false
     t.integer :category_id
   end
 
-  has_filter
-end
-
-class Post < ActiveRecord::Base
-  establish_connection :adapter => 'sqlite3', :database => ':memory:'
-  connection.create_table table_name do |t|
-    t.string  :title
-    t.text    :content
-    t.boolean :active, :default => false
-    t.integer :category_id
-  end
-
-  has_filter :title
-end
-
-class Activity < ActiveRecord::Base
-  establish_connection :adapter => 'sqlite3', :database => ':memory:'
-  connection.create_table table_name do |t|
+  create_table :activities do |t|
     t.integer :category_id
     t.integer :school_grade_id
     t.integer :discipline_id
@@ -38,6 +22,23 @@ class Activity < ActiveRecord::Base
     t.string  :status
   end
 
+  create_table :posts do |t|
+    t.string  :title
+    t.text    :content
+    t.boolean :active, :default => false
+    t.integer :category_id
+  end
+end
+
+class Article < ActiveRecord::Base
+  has_filter
+end
+
+class Post < ActiveRecord::Base
+  has_filter :title
+end
+
+class Activity < ActiveRecord::Base
   has_filter
 end
 
@@ -165,10 +166,13 @@ class HasFilterTest < ActiveSupport::TestCase
     assert_equal 0, founds.size
   end
 
-  test "empty array values" do
+  test "empty values" do
     Article.delete_all
     article = Article.create(:title => "Foo", :content => "Bar", :active => true, :category_id => 1)
     founds = Article.filter(:content => ["Bar", ""])
+    assert_equal 1, founds.size
+
+    founds = Article.filter("title" => "", "content" => "", "active" => [true, false], :category_id => "")
     assert_equal 1, founds.size
   end
 end

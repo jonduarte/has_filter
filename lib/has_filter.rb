@@ -50,7 +50,7 @@ module HasFilter
 
       conditions.each do |key, value|
         next if value.nil?
-        if self.columns_hash[key.to_s].type == :string
+        if _column_type(key) == :string
           filters << _like_conditions(key, value)
         else
           filters << _hash_conditions(key, value)
@@ -60,14 +60,35 @@ module HasFilter
       [filters.join(" AND "), _bind_conditions(conditions)]
     end
 
+    def _column_type(column)
+      self.columns_hash[column.to_s].type
+    end
+
+    def _to_bool(value)
+      ActiveRecord::ConnectionAdapters::Column.value_to_boolean(value)
+    end
+
     def _bind_conditions(conditions)
       conditions.inject({}) do |hash, (key, value)|
-        if !value.is_a?(Array) && self.columns_hash[key.to_s].type == :string
-          hash[key.to_sym] = "%#{value}%"
+        key = key.to_sym
+
+        if !value.is_a?(Array) && _column_type(key) == :string
+          hash[key] = "%#{value}%"
         elsif value.is_a?(Array)
-          hash[key.to_sym] = value.delete_if { |a| a.to_s.blank? }
+          value.reject! { |a| a.to_s.blank? }
+          value.collect! do |v|
+            if _column_type(key) == :boolean
+              v = _to_bool(v)
+            else
+              v
+            end
+          end
+          hash[key] = value
         else
-          hash[key.to_sym] = value
+          if _column_type(key) == :boolean
+            value = _to_bool(value)
+          end
+          hash[key] = value
         end
         hash
       end

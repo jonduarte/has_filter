@@ -172,7 +172,13 @@ class HasFilterTest < ActiveSupport::TestCase
     founds = Article.filter(:content => ["Bar", ""])
     assert_equal 1, founds.size
 
-    founds = Article.filter("title" => "", "content" => "", "active" => [true, false], :category_id => "")
+    founds = Article.filter("title" => "", "content" => "", "active" => ["true", "false"], :category_id => "")
+    assert_equal 1, founds.size
+
+    founds = Article.filter("title" => "", "content" => "", "active" => "false", :category_id => "")
+    assert_equal 0, founds.size
+
+    founds = Article.filter("title" => "", "content" => "", "active" => "true", :category_id => "")
     assert_equal 1, founds.size
   end
 end

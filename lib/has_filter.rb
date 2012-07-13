@@ -68,6 +68,11 @@ module HasFilter
       ActiveRecord::ConnectionAdapters::Column.value_to_boolean(value)
     end
 
+    def _normalize_column(key, value)
+      return _to_bool(value) if _column_type(key.to_s) == :boolean
+      value
+    end
+
     def _bind_conditions(conditions)
       conditions.inject({}) do |hash, (key, value)|
         key = key.to_sym
@@ -75,20 +80,11 @@ module HasFilter
         if !value.is_a?(Array) && _column_type(key) == :string
           hash[key] = "%#{value}%"
         elsif value.is_a?(Array)
-          value.reject! { |a| a.to_s.blank? }
-          value.collect! do |v|
-            if _column_type(key) == :boolean
-              v = _to_bool(v)
-            else
-              v
-            end
-          end
+          value.reject!  { |a| a.to_s.blank? }
+          value.collect! { |v| _normalize_column(key, v) }
           hash[key] = value
         else
-          if _column_type(key) == :boolean
-            value = _to_bool(value)
-          end
-          hash[key] = value
+          hash[key] = _normalize_column(key, value)
         end
         hash
       end

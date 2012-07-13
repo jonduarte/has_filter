@@ -7,6 +7,7 @@ rescue LoadError
 end
 
 require 'rake'
+require 'bundler/gem_tasks'
 require 'rdoc/task'
 
 require 'rake/testtask'

@@ -80,8 +80,7 @@ class HasFilterTest < ActiveSupport::TestCase
     Article.create(:title => "Active")
 
     articles = Article.filter(:title => nil, :active => nil)
-    assert_equal 2, articles.size
-    assert_equal "Active", articles.first.title
+    assert_equal 0, articles.size
   end
 
   test "filter allowed fields" do

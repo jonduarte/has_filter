@@ -21,6 +21,7 @@ module HasFilter
 
     private
 
+
     def _normalize(conditions)
       conditions.
         select { |k, v| self.column_names.include? k.to_s }.
@@ -51,12 +52,12 @@ module HasFilter
     end
 
     def _hash_conditions(key, value = nil)
-      return _join_condition(key, :in) if value.is_a? Array
+      return _join_condition(key, :in) if array?(value)
       _join_condition(key, :eq)
     end
 
     def _like_conditions(key, value)
-      return  _join_condition(key, :in) if value.is_a? Array
+      return  _join_condition(key, :in) if array?(value)
       _join_condition(key, :like)
     end
 
@@ -67,7 +68,7 @@ module HasFilter
 
     def _bind_conditions(conditions)
       conditions.each do |key, value|
-        if !value.is_a?(Array) && string?(key)
+        if !array?(value) && string?(key)
           conditions[key] = "%#{value}%"
         end
       end
@@ -76,8 +77,8 @@ module HasFilter
     def _normalize_conditions(filtering)
       filtering.inject({})  do |hash, (key, value)|
         key   = key.to_sym
-        value = _normalize_column(key, value) unless value.is_a? Array
-        value.collect! { |v| _normalize_column(key, v) } if value.is_a? Array
+        value = _normalize_column(key, value) unless array?(value)
+        value.collect! { |v| _normalize_column(key, v) } if array?(value)
         hash[key] = value
         hash
       end
@@ -91,6 +92,10 @@ module HasFilter
       ActiveRecord::ConnectionAdapters::Column.value_to_boolean(value)
     end
 
+    def _normalize_column(key, value)
+      boolean?(key) ? _to_bool(value) : value
+    end
+
     def boolean?(key)
       _column_type(key.to_s) == :boolean
     end
@@ -99,12 +104,9 @@ module HasFilter
       _column_type(key) == :string
     end
 
-    def _normalize_column(key, value)
-      return _to_bool(value) if boolean?(key)
-      value
+    def array?(value)
+      value.is_a? Array
     end
-
-
   end
 end
 

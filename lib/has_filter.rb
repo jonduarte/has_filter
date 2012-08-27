@@ -40,28 +40,27 @@ module HasFilter
       filters = []
 
       conditions.each do |key, value|
-        next if value.nil?
-        if string?(key)
-          filters << _like_conditions(key, value)
-        else
-          filters << _hash_conditions(key, value)
-        end
+        filters << _hash_conditions(key, value) unless value.nil?
       end
 
       [filters.join(" AND "), _bind_conditions(conditions)]
     end
 
     def _hash_conditions(key, value = nil)
-      return _join_condition(key, :in) if array?(value)
-      _join_condition(key, :eq)
+      if string? key
+        if array? value
+          _join_conditions(key, :in)
+        else
+          _join_conditions(key, :like)
+        end
+      elsif array? value
+        _join_conditions(key, :in)
+      else
+        _join_conditions(key, :eq)
+      end
     end
 
-    def _like_conditions(key, value)
-      return  _join_condition(key, :in) if array?(value)
-      _join_condition(key, :like)
-    end
-
-    def _join_condition(key, kind)
+    def _join_conditions(key, kind)
       types = { :in => "%s in (:%s)", :like => "%s like :%s", :eq => "%s = :%s" }
       [types[kind] % [key.to_s, key.to_s]]
     end

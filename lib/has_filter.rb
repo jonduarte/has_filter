@@ -16,11 +16,10 @@ module HasFilter
       end
 
       conditions = _normalize_conditions(conditions)
-      all(:conditions => _set_filters(conditions).flatten, :limit => limit)
+      all(:conditions => set_filters(conditions), :limit => limit)
     end
 
     private
-
 
     def _normalize(conditions)
       conditions.
@@ -36,14 +35,14 @@ module HasFilter
       conditions.select { |k, v| @_filters.include? k }
     end
 
-    def _set_filters(conditions)
+    def set_filters(conditions)
       filters = []
+      conditions.each { |key, value| filters << _hash_conditions(key, value) }
+      [filters.join(" AND "), likefy(conditions)].flatten
+    end
 
-      conditions.each do |key, value|
-        filters << _hash_conditions(key, value) unless value.nil?
-      end
-
-      [filters.join(" AND "), _bind_conditions(conditions)]
+    def likefy(conditions)
+      conditions.each { |key, value| conditions[key] = "%#{value}%" if !array?(value) && string?(key) }
     end
 
     def _hash_conditions(key, value = nil)
@@ -65,13 +64,6 @@ module HasFilter
       [types[kind] % [key.to_s, key.to_s]]
     end
 
-    def _bind_conditions(conditions)
-      conditions.each do |key, value|
-        if !array?(value) && string?(key)
-          conditions[key] = "%#{value}%"
-        end
-      end
-    end
 
     def _normalize_conditions(filtering)
       filtering.inject({})  do |hash, (key, value)|

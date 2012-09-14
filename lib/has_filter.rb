@@ -9,90 +9,102 @@ module HasFilter
     end
 
     def filter(filtering = nil, limit = 100)
-      conditions = _normalize(filtering)
+      conditions = valid_columns(filtering)
       if @_filters.present?
-        conditions = _valid_filters(conditions)
+        conditions = valid_filters(conditions)
         return [] if conditions.empty?
       end
 
-      conditions = _normalize_conditions(conditions)
+      conditions = normalize_conditions(conditions)
       all(:conditions => set_filters(conditions), :limit => limit)
     end
 
     private
 
-    def _normalize(conditions)
-      conditions.
-        select { |k, v| self.column_names.include? k.to_s }.
-        reject { |k, v| invalid?(v)                       }
+    def valid_columns(conditions)
+      conditions.reject { |k, v| invalid?(v) || !column_names.include?(k.to_s) }
     end
 
     def invalid?(value)
       value.blank? || value.nil?
     end
 
-    def _valid_filters(conditions)
+    def valid_filters(conditions)
       conditions.select { |k, v| @_filters.include? k }
     end
 
     def set_filters(conditions)
       filters = []
-      conditions.each { |key, value| filters << _hash_conditions(key, value) }
-      [filters.join(" AND "), likefy(conditions)].flatten
+      conditions.each { |key, value| filters << hash_conditions(key, value) }
+      [filters.join(" AND "), likefy(conditions)]
     end
 
     def likefy(conditions)
-      conditions.each { |key, value| conditions[key] = "%#{value}%" if !array?(value) && string?(key) }
+      conditions.each { |key, value| conditions[key] = "%#{value}%" if string?(key) }
     end
 
-    def _hash_conditions(key, value = nil)
-      if string? key
-        if array? value
-          _join_conditions(key, :in)
+    def hash_conditions(key, value = nil)
+      type =
+        if string? key
+          if array? value
+            :in
+          else
+            :like
+          end
+        elsif array? value
+          :in
         else
-          _join_conditions(key, :like)
+          :eq
         end
-      elsif array? value
-        _join_conditions(key, :in)
-      else
-        _join_conditions(key, :eq)
-      end
+
+      join_conditions(key, type)
     end
 
-    def _join_conditions(key, kind)
-      types = { :in => "%s in (:%s)", :like => "%s like :%s", :eq => "%s = :%s" }
+    def join_conditions(key, kind)
+      types = {
+        :in   => "%s in (:%s)",
+        :like => "%s like :%s",
+        :eq   => "%s = :%s"
+      }
+
       [types[kind] % [key.to_s, key.to_s]]
     end
 
 
-    def _normalize_conditions(filtering)
+    def normalize_conditions(filtering)
       filtering.inject({})  do |hash, (key, value)|
-        key   = key.to_sym
-        value = _normalize_column(key, value) unless array?(value)
-        value.collect! { |v| _normalize_column(key, v) } if array?(value)
-        hash[key] = value
+        key       = key.to_sym
+        hash[key] = normalize_value(key, value)
         hash
       end
     end
 
-    def _column_type(column)
+    def normalize_value(key, value)
+      if array? value
+        value.collect { |v| normalize_if_boolean(key, v) }
+      else
+        normalize_if_boolean(key, value)
+      end
+    end
+
+    def column_type(column)
       self.columns_hash[column.to_s].type
     end
 
-    def _to_bool(value)
+    def to_boolean(value)
       ActiveRecord::ConnectionAdapters::Column.value_to_boolean(value)
     end
 
-    def _normalize_column(key, value)
-      boolean?(key) ? _to_bool(value) : value
+    def normalize_if_boolean(key, value)
+      boolean?(key) ? to_boolean(value) : value
     end
 
     def boolean?(key)
-      _column_type(key.to_s) == :boolean
+      column_type(key.to_s) == :boolean
     end
 
     def string?(key)
-      _column_type(key) == :string
+      column_type(key) == :string
     end
 
     def array?(value)

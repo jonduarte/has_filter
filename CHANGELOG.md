@@ -1,3 +1,10 @@
+-NOT COMPLETE-
+  * Add possibility to chain active record methods
+      Ex: Article.filter("title" => "Foo").where(:content => "Barz").first
+  * Remove `limit` option from `HasFilter#filter`, now you should
+    chain limit method from active record or use named scope.
+-NOT COMPLETE-
+
 ## 0.1.2
   * Add limit option for filtering, default = 100.
   * Fix empty filtering again - Only return nothing when filtering

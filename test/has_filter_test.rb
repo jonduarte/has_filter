@@ -98,13 +98,29 @@ class HasFilterTest < ActiveSupport::TestCase
     assert_equal 1, founds.size
   end
 
-  test "with limit" do
+  test "keep it chainable" do
     Article.delete_all
     Article.create(:title => "Foo", :content => "Bar", :active => true, :category_id => 1)
     Article.create(:title => "Foo", :content => "Bar", :active => true, :category_id => 1)
-    Article.create(:title => "Foo", :content => "Bar", :active => true, :category_id => 1)
+    barz = Article.create(:title => "Foo", :content => "Barz", :active => true, :category_id => 1)
 
-    founds = Article.filter({"title" => "Foo"}, 1)
+    founds = Article.filter("title" => "Foo").limit(1).all
     assert_equal 1, founds.size
+
+    found = Article.filter("title" => "Foo").where(:content => "Barz").first
+    assert_equal barz, found
+  end
+
+  test "using named scope" do
+    Article.delete_all
+    Article.create(:title => "Foo", :content => "Bar", :active => true, :category_id => 1)
+    Article.create(:title => "Foo", :content => "Bar", :active => true, :category_id => 1)
+    barz = Article.create(:title => "Foo", :content => "Barz", :active => true, :category_id => 1)
+
+    founds = Article.filter("title" => "Foo").limitation.all
+    assert_equal 1, founds.size
+
+    found = Article.filter("title" => "Foo").where(:content => "Barz").limitation(1).first
+    assert_equal barz, found
   end
 end

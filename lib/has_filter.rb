@@ -8,15 +8,19 @@ module HasFilter
       @_filters = *allowed_fields
     end
 
-    def filter(filtering = nil, limit = 100)
+    def filter(filtering = nil)
       conditions = valid_columns(filtering)
       if @_filters.present?
         conditions = valid_filters(conditions)
         return [] if conditions.empty?
       end
-
       conditions = normalize_conditions(conditions)
-      all(:conditions => set_filters(conditions), :limit => limit)
+
+      self.instance_eval <<-SCOPE, __FILE__, __LINE__ + 1
+        scope :dynamic_has_filter, :conditions => #{set_filters(conditions)}
+      SCOPE
+
+      dynamic_has_filter
     end
 
     private

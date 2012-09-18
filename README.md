@@ -52,13 +52,3 @@ end
 Post.filter(:active => true)                         #=> No filtering
 Post.filter(:title  => "Something", :active => true) #=> All that match with title Something (title like %Something%) ignoring active condition
 ```
-
-### Limit
-
-By default the max of records is 100, by you can specify other amount:
-
-```ruby
-Article.filter({:status => "open"}, 1)   #=> Retrieve just one element
-```
-
-Note which when we specify a limit, we need to wrap our options in a hash

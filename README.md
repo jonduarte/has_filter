@@ -8,7 +8,7 @@
 Add this line to your Gemfile:
 
 ``` ruby
-gem has_filter
+gem 'has_filter'
 ```
 
 In **Rails 2.3**, you also have to add it to your `envoriment.rb`:
